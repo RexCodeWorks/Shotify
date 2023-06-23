@@ -12,6 +12,7 @@ export default async function handler(
     // Fetch data from Redis using the provided "id"
     const data = await redis.get(id);
     console.log("id", id);
+    console.log("data", data);
     if (!data) {
       // If no data is found, return a 404 status with a message
       return res.status(404).json({ message: "No data found" });

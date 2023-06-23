@@ -1,31 +1,41 @@
 import { NextApiRequest, NextApiResponse } from "next";
+const QSTASH = process.env.QSTASH;
+const QSTASH_TOKEN = process.env.QSTASH_TOKEN;
+const YOUTUBE_API_URL = process.env.YOUTUBE_API_URL;
+const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
+const VERCEL_URL = "http://localhost:3000";
 
 async function getYoutubeVideoInfo(videoUrl, apiKey) {
     const videoId = videoUrl.split("watch?v=")[1];
-    const apiUrl = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&key=${apiKey}&part=snippet,contentDetails,statistics`;
+    const apiUrl = `${QSTASH}${YOUTUBE_API_URL}?id=${videoId}&key=${apiKey}&part=snippet,contentDetails,statistics&upstash-callback=${encodeURIComponent(VERCEL_URL + "/api/callback")}`;
+
     console.log("apiUrl", apiUrl);
-    const response = await fetch(apiUrl);
-    const data = await response.json();
 
-    if (data.items.length === 0) {
-        return null;
-    }
+    const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${QSTASH_TOKEN}`,
+            "Content-Type": "application/json",
+        },
+    });
+    const json = await response.json();
 
-    return data.items[0];
+    return { id: json.messageId };
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-    const { prompt } = req.query;
-    const apiKey = process.env.YOUTUBE_API_KEY;
+    const { videoUrl } = req.query;
+
+    console.log("videoUrl", videoUrl);
 
     try {
-        const videoInfo = await getYoutubeVideoInfo(prompt, apiKey);
+        const response = await getYoutubeVideoInfo(videoUrl, YOUTUBE_API_KEY);
 
-        if (!videoInfo) {
+        if (!response) {
             return res.status(404).json({ message: "Video not found" });
         }
 
-        return res.status(200).json(videoInfo);
+        return res.status(202).json(response);
     } catch (error) {
         return res
             .status(500)

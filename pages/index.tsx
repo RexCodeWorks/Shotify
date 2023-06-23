@@ -1,16 +1,15 @@
 import cn from "classnames";
 import Head from "next/head";
-import Script from "next/script";
 import { useState } from "react";
 import { toast, Toaster } from "react-hot-toast";
 import { useInterval } from "../utils/use-interval";
 
 export default function Home() {
   // Declare state variables
-  const [prompt, setPrompt] = useState("");
+  const [videoUrl, setVideoUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [messageId, setMessageId] = useState("");
-  const [script, setScript] = useState(null);
+  const [video, setVideo] = useState(null);
   const [canShowScript, setCanShowScript] = useState(false);
 
   // Logic to periodically check if image generation is completed
@@ -20,7 +19,8 @@ export default function Home() {
       const json = await res.json();
       if (res.status === 200) {
         setLoading(false);
-        setScript(json.data[0].url);
+        console.log("json", json);
+        setVideo(json.data[0]);
       }
     },
     loading ? 1000 : null
@@ -32,14 +32,14 @@ export default function Home() {
     setLoading(true);
     toast("Generating your script...", { position: "top-center" });
     // Change the endpoint to '/api/getYoutubeVideoInfo'
-    const response = await fetch(`/api/getYoutubeVideoInfo?prompt=${prompt}`);
+    const response = await fetch(`/api/getYoutubeVideoInfo?videoUrl=${videoUrl}`);
     const json = await response.json();
     setMessageId(json.id);
   }
 
 
   // Determine if loading state should be shown
-  const showLoadingState = loading || (script && !canShowScript);
+  const showLoadingState = loading || (video && !canShowScript);
 
   return (
     <>
@@ -62,7 +62,7 @@ export default function Home() {
               className="shadow-sm text-gray-700 rounded-sm px-3 py-2 mb-4 sm:mb-0 sm:min-w-[600px]"
               type="text"
               placeholder="Drop a Youtube link here"
-              onChange={(e) => setPrompt(e.target.value)}
+              onChange={(e) => setVideoUrl(e.target.value)}
             />
             {/* Button */}
             <button
@@ -98,7 +98,7 @@ export default function Home() {
           </form>
           {/* Image container */}
           <div className="relative flex w-full items-center justify-center">
-            {script}
+            {video}
             {/* Overlaid loading state */}
             <div
               className={cn(
